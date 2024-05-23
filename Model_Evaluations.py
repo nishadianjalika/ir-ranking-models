@@ -5,6 +5,7 @@ import math
 import matplotlib.pyplot as plt
 import plotly.express as px
 import warnings
+import seaborn as sns
 
 ### Task 5. Using 3 effectiveness measures to evaluate the three models
 # Average precision (and MAP),
@@ -12,12 +13,12 @@ import warnings
 # Discounted cumulative gain at rank position 10 (p = 10), DCG10 (and their average)
 
 # Calculate and sort the precision in calculate_precision and calculate_precision_N functions
-def calculate_metrics(dataset_id, dataset_ranking, dataset_feedback):
+def calculate_metrics(dataset_id, dataset_ranking, benchmark_dataset):
     ri = 0
     map1 = 0.0
-    R = len([id for (id, v) in dataset_feedback[dataset_id].items() if v > 0]) #Used just for Recall
+    R = len([id for (id, v) in benchmark_dataset[dataset_id].items() if v > 0]) #Used just for Recall
     for (n, id_) in sorted(dataset_ranking[dataset_id].items(), key=lambda x: int(x[0])):
-        if dataset_feedback[dataset_id].get(id_, 0) > 0:
+        if benchmark_dataset[dataset_id].get(id_, 0) > 0:
             ri += 1
             pi = round(float(ri) / float(int(n)), 4)            
             map1 += pi
@@ -28,49 +29,45 @@ def calculate_metrics(dataset_id, dataset_ranking, dataset_feedback):
     return f"R{dataset_id}", map1
 
 
-# Process feedback file
-def process_feedback():
-    feedback_folder = "Feedback"
-    dataset_feedback = {}
+# Process evaluation benchmark dataset
+def process_benckmark_files():
+    benchmark_folder = "EvaluationBenchmark"
+    benchmark_dataset = {}
 
-    for filename in os.listdir(feedback_folder):
-        if filename.endswith(".txt"):
-            dataset_id = re.search(r"\d+", filename).group()
-            file_path = os.path.join(feedback_folder, filename)
-            with open(file_path, "r") as feedback_file:
-                lines = feedback_file.readlines()
-                dataset_feedback[dataset_id] = {}
-                for line in lines:
+    for benchmark_file in os.listdir(benchmark_folder):
+        if benchmark_file.endswith(".txt"):
+            dataset_id = re.search(r"\d+", benchmark_file).group()
+            file_path = os.path.join(benchmark_folder, benchmark_file)
+            with open(file_path, "r") as benchmark_f:
+                b_lines = benchmark_f.readlines()
+                benchmark_dataset[dataset_id] = {}
+                for line in b_lines:
                     line = line.strip()
-                    lineList = line.split() #['R101', '46547', '1']
-                    dataset_feedback[dataset_id][lineList[1]] = float(lineList[2])
+                    lineList = line.split()
+                    benchmark_dataset[dataset_id][lineList[1]] = float(lineList[2])
+    
+    #Returns a dictionary with the structure of {datasetID, docId, and relevanceScore}
+    return benchmark_dataset 
 
-    return dataset_feedback #The structure is: {dataset ID, document ID, and relevance score}
-
-
-# Calculate the total precision
 def calculate_precision(folder_result, model):
-    dataset_feedback = process_feedback()
+    dataset_feedback = process_benckmark_files()
     result_folder = folder_result
     dataset_ranking = {}
     data = []
 
-    for dataset_folder in os.listdir(result_folder):
-        dataset_path = os.path.join(result_folder, dataset_folder)
-        if os.path.isdir(dataset_path):
-            dataset_id = dataset_folder.split("Dataset")[1]
+    for filename in os.listdir(result_folder):
+        if filename.endswith(".dat"):
+            dataset_id = re.search(r"R(\d+)", filename).group(1)
             dataset_ranking[dataset_id] = {}
             i = 1
-            for filename in os.listdir(dataset_path):
-                if filename.endswith(".dat"):
-                    file_path = os.path.join(dataset_path, filename)
-                    with open(file_path, "r") as result_file:
-                        lines = result_file.readlines()
-                        for line in lines:
-                            line = line.strip()
-                            line1 = line.split(":") #['46547', ' 4.859532662539241']
-                            dataset_ranking[dataset_id][str(i)] = line1[0]
-                            i += 1 # assigns the current position to each dataset_id in the ranking
+            file_path = os.path.join(result_folder, filename)
+            with open(file_path, "r") as result_file:
+                lines = result_file.readlines()
+                for line in lines:
+                    line = line.strip()
+                    doc_id, score = line.split()
+                    dataset_ranking[dataset_id][str(i)] = doc_id
+                    i += 1 # assigns the current position to each dataset_id in the ranking
 
             label, map1_score = calculate_metrics(dataset_id, dataset_ranking, dataset_feedback)
             data.append([label, map1_score])
@@ -78,35 +75,31 @@ def calculate_precision(folder_result, model):
     df = pd.DataFrame(data, columns=['Topic', model])
     return df
 
-
-# Calculate the precision@12
-def calculate_precision_N(folder_result, model):
-    dataset_feedback = process_feedback()
+# Calculate the precision@10
+def calculate_precision_N(folder_result, model, N=10):
+    dataset_feedback = process_benckmark_files()
     result_folder = folder_result
     dataset_ranking = {}
     data = []
 
-    for dataset_folder in os.listdir(result_folder):
-        dataset_path = os.path.join(result_folder, dataset_folder)
-        if os.path.isdir(dataset_path):
-            dataset_id = dataset_folder.split("Dataset")[1]
+    for filename in os.listdir(result_folder):
+        if filename.endswith(".dat"):
+            dataset_id = re.search(r"R(\d+)", filename).group(1)
             dataset_ranking[dataset_id] = {}
             data_rank = {}
-            for filename in os.listdir(dataset_path):
-                if filename.endswith(".dat"):
-                    file_path = os.path.join(dataset_path, filename)
-                    with open(file_path, "r") as result_file:
-                        lines = result_file.readlines()
-                        for line in lines:
-                            line = line.strip()
-                            line1 = line.split(":") #['46547', ' 4.859532662539241']
-                            data_rank[line1[0]] = float(line1[1])
+            file_path = os.path.join(result_folder, filename)
+            with open(file_path, "r") as result_file:
+                lines = result_file.readlines()
+                for line in lines:
+                    line = line.strip()
+                    doc_id, score = line.split()
+                    data_rank[doc_id] = float(score)
 
             i = 1
             for (k, v) in sorted(data_rank.items(), key=lambda x: x[1], reverse=True): #score in descending
                 dataset_ranking[dataset_id][str(i)] = k
                 i += 1
-                if i > 12:
+                if i > N:
                     break
             
             label, map1_score = calculate_metrics(dataset_id, dataset_ranking, dataset_feedback)
@@ -114,7 +107,6 @@ def calculate_precision_N(folder_result, model):
     
     df = pd.DataFrame(data, columns=['Topic', model])
     return df
-
 
 # Calculate the Discounted Community Gain 12
 def calculate_DCGp(rel_scores, p):
@@ -124,47 +116,42 @@ def calculate_DCGp(rel_scores, p):
         DCGp += reli / (math.log2(i))
     return DCGp
 
+# calculates a list of relevance scores for the documents in the ranking based on the feedback
+def calculate_metrics_DCG(dataset_id, dataset_ranking, benchmark_dataset):
+    rel_scores = [1 if benchmark_dataset[dataset_id].get(id_, 0) > 0 else 0 for id_ in dataset_ranking[dataset_id].values()]
+    DCG10 = calculate_DCGp(rel_scores, 10)
+    return round(DCG10, 4)
 
 def calculate_DCG(folder_result, model):
-    dataset_feedback = process_feedback()
+    dataset_feedback = process_benckmark_files()
     dataset_ranking = {}
     result_folder = folder_result
-    
-    
-    # calculates a list of relevance scores for the documents in the ranking based on the feedback
-    def calculate_metrics_DCG(dataset_id, dataset_ranking, dataset_feedback):
-        rel_scores = [1 if dataset_feedback[dataset_id].get(id_, 0) > 0 else 0 for id_ in dataset_ranking[dataset_id].values()]
-        DCG12 = calculate_DCGp(rel_scores, 12)
-        return round(DCG12, 4)
 
-    DCG12_values = []
-    for dataset_folder in os.listdir(result_folder):
-        dataset_path = os.path.join(result_folder, dataset_folder)
-        if os.path.isdir(dataset_path):
-            dataset_id = dataset_folder.split("Dataset")[1]
+    DCG10_values = []
+    for filename in os.listdir(result_folder):
+        if filename.endswith(".dat"):
+            dataset_id = re.search(r"R(\d+)", filename).group(1)
             dataset_ranking[dataset_id] = {}
             data_rank = {}
-            for filename in os.listdir(dataset_path):
-                if filename.endswith(".dat"):
-                    file_path = os.path.join(dataset_path, filename)
-                    with open(file_path, "r") as result_file:
-                        lines = result_file.readlines()
-                        for line in lines:
-                            line = line.strip()
-                            line1 = line.split(":")
-                            data_rank[line1[0]] = float(line1[1])
+            file_path = os.path.join(result_folder, filename)
+            with open(file_path, "r") as result_file:
+                lines = result_file.readlines()
+                for line in lines:
+                    line = line.strip()
+                    doc_id, score = line.split()
+                    data_rank[doc_id] = float(score)
 
             i = 1
             for (k, v) in sorted(data_rank.items(), key=lambda x: x[1], reverse=True):
                 dataset_ranking[dataset_id][str(i)] = k
                 i += 1
-                if i > 12:
+                if i > 10:
                     break
 
-            DCG12 = calculate_metrics_DCG(dataset_id, dataset_ranking, dataset_feedback)
-            DCG12_values.append([f"R{dataset_id}", DCG12])
+            DCG10 = calculate_metrics_DCG(dataset_id, dataset_ranking, dataset_feedback)
+            DCG10_values.append([f"R{dataset_id}", DCG10])
 
-    df = pd.DataFrame(DCG12_values, columns=['Topic', model])
+    df = pd.DataFrame(DCG10_values, columns=['Topic', model])
     return df
 
 """#### model_evaluation using three methods """
@@ -184,12 +171,12 @@ def compare_precision(df1_precision, df2_precision, df3_precision):
     # Reset the index of the concatenated dataframe
     concatenated_precision = concatenated_precision.reset_index(drop=True)
 
-    # Select columns 2 and 5
+    # Select columns 0, 1, 3, and 5
     df_precision = concatenated_precision.iloc[:, [0,1,3,5]]
 
     # Display the resulting dataframe
     print("----- Table 1: The performance of 3 models on average precision -----")
-    #df_precision.head(151)
+    print(df_precision.head(151))
 
     average_values_precision = df_precision.mean() 
 
@@ -204,40 +191,40 @@ def compare_precision(df1_precision, df2_precision, df3_precision):
     return df_with_average, average_values_precision
 
 
-"""#### 02. Precision@12"""
+"""#### 02. Precision@10"""
 def compare_precision10(df1_precision_10, df2_precision_10, df3_precision_10):
     # 2. Precision12
     # Concatenate the dataframes horizontally
-    concatenated_precision12 = pd.concat([df1_precision_10, df2_precision_10, df3_precision_10], axis=1)
+    concatenated_precision10 = pd.concat([df1_precision_10, df2_precision_10, df3_precision_10], axis=1)
 
     # Reset the index of the concatenated dataframe
-    concatenated_precision12 = concatenated_precision12.reset_index(drop=True)
+    concatenated_precision10 = concatenated_precision10.reset_index(drop=True)
 
     # Select columns 2 and 5
-    df_precision12 = concatenated_precision12.iloc[:, [0, 1,3,5]]
+    df_precision10 = concatenated_precision10.iloc[:, [0, 1,3,5]]
 
     # Display the resulting dataframe
-    print("----- Table 2. The performance of 3 models on precision@12 -----")
-    #df_precision12.head(151)
+    print("----- Table 2. The performance of 3 models on precision@10 -----")
+    print(df_precision10.head(151))
 
-    average_values_precision12 = df_precision12.mean()
+    average_values_precision10 = df_precision10.mean()
 
     # Create a new row with the average values
-    average_row = pd.DataFrame([average_values_precision12], columns=df_precision12.columns)
+    average_row = pd.DataFrame([average_values_precision10], columns=df_precision10.columns)
 
     # Concatenate the average row to the original DataFrame
-    df_with_average = pd.concat([df_precision12, average_row], ignore_index=True)
+    df_with_average = pd.concat([df_precision10, average_row], ignore_index=True)
 
     # Print the DataFrame with the average row
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
-    return df_with_average, average_values_precision12
+    return df_with_average, average_values_precision10
 
-def plot_average_val_to_compare(average_values_precision, average_values_precision12, average_values_DCG12):
+def plot_average_val_to_compare(average_values_precision, average_values_precision10, average_values_DCG10):
     # Create a dictionary from the variables
     data = {
         'MAP': average_values_precision,
-        'Average Precision 12': average_values_precision12,
-        'Average DCG 12': average_values_DCG12
+        'Average Precision 10': average_values_precision10,
+        'Average DCG 10': average_values_DCG10
     }
 
     # Create a DataFrame from the dictionary
@@ -258,36 +245,56 @@ def plot_average_val_to_compare(average_values_precision, average_values_precisi
     )
     fig.show()
 
+def plot_bar_chart_comparison(average_values_precision, average_values_precision10, average_values_DCG10):
+    # Create a DataFrame from the average values
+    df = pd.DataFrame({
+        'Metric': ['MAP', 'Average Precision 10', 'Average DCG 10'],
+        'BM25': [average_values_precision['BM25'], average_values_precision10['BM25'], average_values_DCG10['BM25']],
+        'JM_LM': [average_values_precision['JM_LM'], average_values_precision10['JM_LM'], average_values_DCG10['JM_LM']],
+        'MY_PRM': [average_values_precision['MY_PRM'], average_values_precision10['MY_PRM'], average_values_DCG10['MY_PRM']]
+    })
+
+    # Melt the DataFrame to long format
+    df_melted = df.melt(id_vars='Metric', var_name='Model', value_name='Score')
+
+    # Plot the bar chart
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=df_melted, x='Metric', y='Score', hue='Model')
+    plt.title('Comparison of Models on Different Metrics')
+    plt.xlabel('Metric')
+    plt.ylabel('Average Score')
+    plt.legend(title='Model')
+    plt.show()
 
 """# 03. DCG12"""
-def compare_DCG(df1_DCG12, df2_DCG12, df3_DCG12):
+def compare_DCG(df1_DCG10, df2_DCG10, df3_DCG10):
     # Ignore warnings
     warnings.filterwarnings('ignore')
 
     # Concatenate the dataframes horizontally
-    concatenated_DCG12 = pd.concat([df1_DCG12, df2_DCG12, df3_DCG12], axis=1)
+    concatenated_DCG10 = pd.concat([df1_DCG10, df2_DCG10, df3_DCG10], axis=1)
 
     # Reset the index of the concatenated dataframe
-    concatenated_DCG12 = concatenated_DCG12.reset_index(drop=True)
+    concatenated_DCG10 = concatenated_DCG10.reset_index(drop=True)
 
     # Select columns 2 and 5
-    df_DCG12 = concatenated_DCG12.iloc[:, [0, 1,3,5]]
+    df_DCG10 = concatenated_DCG10.iloc[:, [0, 1,3,5]]
 
     # Display the resulting dataframe
     print("----- Table 3: The performance of 3 models on DCG12 -----")
-    #df_DCG12.head(151)
+    print(df_DCG10.head(151))
 
-    average_values_DCG12 = df_DCG12.mean() 
+    average_values_DCG10 = df_DCG10.mean() 
 
     # Create a new row with the average values
-    average_row = pd.DataFrame([average_values_DCG12], columns=df_DCG12.columns)
+    average_row = pd.DataFrame([average_values_DCG10], columns=df_DCG10.columns)
 
     # Concatenate the average row to the original DataFrame
-    df_with_average = pd.concat([df_DCG12, average_row], ignore_index=True)
+    df_with_average = pd.concat([df_DCG10, average_row], ignore_index=True)
 
     # Print the DataFrame with the average row
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
-    return df_with_average, average_values_DCG12
+    return df_with_average, average_values_DCG10
 
 
 if __name__ == '__main__':
@@ -308,13 +315,17 @@ if __name__ == '__main__':
     #Evaluate MY_PRM model results
     df3_precision, df3_precision_10, df3_DCG10 = model_evaluation(folder_result_MYPRM, myprm_model)
 
+    print(f"{df1_precision} , { df2_precision}, {df3_precision}")
+    
     # compare_precision
     df_with_average, average_values_precision = compare_precision(df1_precision, df2_precision, df3_precision)
     # compare_precision10
-    df_with_average_10, average_values_precision12 = compare_precision10(df1_precision_10, df2_precision_10, df3_precision_10)
-    # compare_DCG
-    df_with_average_DCG, average_values_DCG12 = compare_DCG(df1_DCG10, df2_DCG10, df3_DCG10)
+    df_with_average_10, average_values_precision10 = compare_precision10(df1_precision_10, df2_precision_10, df3_precision_10)
+    # # compare_DCG
+    df_with_average_DCG, average_values_DCG10 = compare_DCG(df1_DCG10, df2_DCG10, df3_DCG10)
 
-    plot_average_val_to_compare(average_values_precision, average_values_precision12, average_values_DCG12)
+    plot_average_val_to_compare(average_values_precision, average_values_precision10, average_values_DCG10)
+    # Plot the comparison using bar chart
+    plot_bar_chart_comparison(average_values_precision, average_values_precision10, average_values_DCG10)
 
 
