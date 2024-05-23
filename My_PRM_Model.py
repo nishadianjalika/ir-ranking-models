@@ -1,7 +1,7 @@
 from helper_tasks import *
 import math
 import os
-from BM25 import *
+from BM25_Model import *
 
 # Task 3: My_PRM (Pseudo-Relevance Model)
 # first, use BM25 to rank the documents based on the initial query
