@@ -15,8 +15,8 @@ def my_prm(coll, query_terms, df):
     sorted_scores_desc = sorted(bm25_scores.items(), key=lambda x: x[1], reverse=True) 
 
     # with pseudo-relevance feedback technique, we assumed that the 10 top-ranked documents are relevant and last 10 are non-relevant
-    relevant_documents = {docid: vector_normalize(coll[docid]) for docid, score in sorted_scores_desc[:10]}
-    nonrelevant_documents = {docid: vector_normalize(coll[docid]) for docid, score in sorted_scores_desc[-10:]}
+    relevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[:10]}
+    nonrelevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[-10:]}
 
     # Using Rocchio's algorithm and the top-ranked documents to refine the query vector
     updated_query_vector = rocchios_algorithm(vector_normalize(query_terms), relevant_documents, nonrelevant_documents)
@@ -63,12 +63,18 @@ def rocchios_algorithm(vactorized_query, relevant_docs, nonrelevant_docs):
     return updated_query
 
 # Use to tune the Rocchio model
+# def vector_normalize(vector):
+#     len = sum([v*v for v in vector.values()])
+#     if len == 0:
+#         return vector
+#     len = math.sqrt(len)
+#     return {key: val/len for key, val in vector.items()}
+
 def vector_normalize(vector):
-    len = sum([v*v for v in vector.values()])
-    if len == 0:
+    length = math.sqrt(sum([v*v for v in vector.values()]))
+    if length == 0:
         return vector
-    len = math.sqrt(len)
-    return {key: val/len for key, val in vector.items()}
+    return {term: freq / length for term, freq in vector.items()}
 
 #Task 04: save my_prm ranked scores per query 
 def save_prm_ranking_to_file(jm_lm_scores, query_num):
@@ -78,17 +84,25 @@ def save_prm_ranking_to_file(jm_lm_scores, query_num):
         for doc_id, score in sorted(jm_lm_scores.items(), key=lambda item: item[1], reverse=True):
             f.write(f"{doc_id} {score}\n")
 
-def print_prm_top_documents(query_num):
+def print_prm_top_documents(query_num, log_file):
     output_file = f"RankingOutputs_MY_PRM/MY_PRM_{query_num}Ranking.dat"
     with open(output_file, 'r') as f:
         lines = f.readlines()
         sorted_docs = sorted(lines, key=lambda x: float(x.split(' ')[1]), reverse=True)
         top_documents = sorted_docs[:15]
 
-        print(f"Top 15 Documents for {query_num} (DocID Weight):")
+        output = []
+        output.append(f"Top 15 Documents for {query_num} (DocID Weight):")
         for doc_score in top_documents:
             doc_id, score = doc_score.strip().split(' ')
-            print(f"{doc_id} {score}\n")
+            output.append(f"{doc_id} {score}\n")
+        
+        print("\n".join(output))
+
+        # Write to the log file
+        with open(log_file, 'a') as log_f:
+            log_f.write("\n".join(output))
+            log_f.write("\n\n")
 
 if __name__ == '__main__':
     query_file_path = 'the50Queries.txt'
@@ -103,16 +117,7 @@ if __name__ == '__main__':
         df = my_df(coll) # Get a dictionary of {term: doc_fre} : how many documents contain the term
 
         prm_model_scores = my_prm(coll, query_terms, df)
-        save_prm_ranking_to_file(prm_model_scores, query_num)
-        print_prm_top_documents(query_num)
 
-    # Test for only one query R107
-    query_num = 'Number: R107'
-    if query_num in queries_dict:
-        query_terms = queries_dict[query_num]
-        collection_num = ''.join(c for c in query_num if c.isdigit())  # Get corresponding collection for the query number
-        coll = parse_rcv1v2(stopwordList, f"{input_path}Data_C{collection_num}")  # Create a collection of Rcv1Doc objects for the corresponding coll
-        df = my_df(coll)  # Get a dictionary of {term: doc_fre} : how many documents contain the term
-        jm_lm_scores = my_prm(coll, query_terms, df)  # Calculate JM_LM probability for given query term
-        save_prm_ranking_to_file(jm_lm_scores, query_num.split(':')[-1].strip())  # Save the ranked file per query term
-        print_prm_top_documents(query_num.split(':')[-1].strip())
+        log_file = "output_file_MyPRM_Ranking_Docs"
+        save_prm_ranking_to_file(prm_model_scores, query_num.split(':')[-1].strip())
+        print_prm_top_documents(query_num.split(':')[-1].strip(), log_file)
