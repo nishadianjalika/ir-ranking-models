@@ -12,10 +12,6 @@ def jm_lm(coll, query_term_freq, df):
     data_cx = sum(rcv1_doc.getDocLen() for rcv1_doc in coll.values())
 
     for doc_id, rcv1_doc in coll.items():
-
-        if doc_id != '71157':
-            continue 
-
         doc_len = rcv1_doc.getDocLen() # get Document length
         score = 0.0
 
@@ -24,7 +20,7 @@ def jm_lm(coll, query_term_freq, df):
             fqi = rcv1_doc.terms.get(term, 0) # number of time query term occurs in the document
             cqi = df.get(term, 0) #number of times query term occurs in document collection
             if doc_len > 0 and data_cx > 0:
-                score *= ((1 - lambda_param)* (fqi / doc_len)) + (lambda_param * (cqi / data_cx))
+                score += math.log10((1 - lambda_param)* (fqi / doc_len)) + (lambda_param * (cqi / data_cx))
         
         jm_lm_scores[doc_id] = score
 
@@ -55,14 +51,14 @@ if __name__ == '__main__':
     input_path, stopwordList = get_input_path_and_stopword_list() #get stopword file as a list and input filepath for docs
     queries_dict = parse_queries(query_file_path, stopwordList, 'JM_LM') #get queries and their frequency for JM_LM method 
 
-    # # for each query title in the50Queries.txt, calculate the jm_lm score
-    # for query_num, query_terms in queries_dict.items():
-    #     collection_num = ''.join(c for c in query_num if c.isdigit()) #get corresponding collection for the query number
-    #     coll = parse_rcv1v2(stopwordList, f"{input_path}Data_C{collection_num}") # create a collection of Rcv1Doc object for the corresponding coll
-    #     df = my_df(coll) # get a dictionary of {term: doc_fre} : how many documents contains the term 
-    #     jm_lm_scores = jm_lm(coll, query_terms, df) # calculate jm_lm probabaility for given query term
-    #     save_jmlm_ranking_to_file(jm_lm_scores, query_num.split(':')[-1].strip()) #save the ranked file per query term
-    #     print_jmlm_top_documents(query_num)
+    # for each query title in the50Queries.txt, calculate the jm_lm score
+    for query_num, query_terms in queries_dict.items():
+        collection_num = ''.join(c for c in query_num if c.isdigit()) #get corresponding collection for the query number
+        coll = parse_rcv1v2(stopwordList, f"{input_path}Data_C{collection_num}") # create a collection of Rcv1Doc object for the corresponding coll
+        df = my_df(coll) # get a dictionary of {term: doc_fre} : how many documents contains the term 
+        jm_lm_scores = jm_lm(coll, query_terms, df) # calculate jm_lm probabaility for given query term
+        save_jmlm_ranking_to_file(jm_lm_scores, query_num.split(':')[-1].strip()) #save the ranked file per query term
+        print_jmlm_top_documents(query_num.split(':')[-1].strip())
 
     # Test for only one query R107
     query_num = 'Number: R107'
@@ -73,4 +69,4 @@ if __name__ == '__main__':
         df = my_df(coll)  # Get a dictionary of {term: doc_fre} : how many documents contain the term
         jm_lm_scores = jm_lm(coll, query_terms, df)  # Calculate JM_LM probability for given query term
         save_jmlm_ranking_to_file(jm_lm_scores, query_num.split(':')[-1].strip())  # Save the ranked file per query term
-        print_jmlm_top_documents(query_num)
+        print_jmlm_top_documents(query_num.split(':')[-1].strip())

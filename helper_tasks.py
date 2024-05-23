@@ -40,7 +40,7 @@ class Rcv1Doc:
         # self.doc_len += 1
         self.terms[term] = self.terms.get(term, 0) + 1
 
-def parse_rcv1v2(stop_words, input_path):
+def parse_rcv1v2_specific_doc(stop_words, input_path):
     rcv1_collection = {}
     specific_doc = '71157.xml'
     file_path = os.path.join(input_path, specific_doc)
@@ -74,7 +74,7 @@ def parse_rcv1v2(stop_words, input_path):
     return rcv1_collection
 
 # This method is used to parse a data collection by giving input files path and the stop words list to eliminate
-def parse_rcv1v2_old(stop_words, input_path):
+def parse_rcv1v2(stop_words, input_path):
     global rcv1_doc
     rcv1_collection = {}
     for file_ in glob.glob(input_path + "/*.xml"):  # using glob() to read all the matching .xml type files

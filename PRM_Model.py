@@ -115,4 +115,4 @@ if __name__ == '__main__':
         df = my_df(coll)  # Get a dictionary of {term: doc_fre} : how many documents contain the term
         jm_lm_scores = my_prm(coll, query_terms, df)  # Calculate JM_LM probability for given query term
         save_prm_ranking_to_file(jm_lm_scores, query_num.split(':')[-1].strip())  # Save the ranked file per query term
-        print_prm_top_documents(query_num)
+        print_prm_top_documents(query_num.split(':')[-1].strip())

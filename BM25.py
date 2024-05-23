@@ -21,7 +21,7 @@ def my_bm25(coll, query_term_freq, df):
     # Calculate BM25 score for each rcv1_doc document in coll collection
     for doc_id, rcv1_doc in coll.items():
         dl = rcv1_doc.getDocLen()  # Document length
-        K = k1 * ((1 - b) + (b * (dl / avdl)))  # Calculate K for the document
+        K = k1 * ((1 - b) + ((b *dl) / avdl))  # Calculate K for the document K = k1*((1-b) + b*dl /avdl)
         bm25_doc_score = 0
 
         # Get the sum for each query term 'term' and qfi is term frequency of the query
@@ -55,7 +55,7 @@ def save_bm25_ranking_to_file(bm25_scores, query_num):
             f.write(f"{doc_id} {score}\n")
 
 def print_bm25_top_documents(query_num):
-    output_file = f"RankingOutputs_JM_LM/JM_LM_{query_num}Ranking.dat"
+    output_file = f"RankingOutputs_BM25/BM25_{query_num}Ranking.dat"
     with open(output_file, 'r') as f:
         lines = f.readlines()
         sorted_docs = sorted(lines, key=lambda x: float(x.split(' ')[1]), reverse=True)
@@ -80,5 +80,17 @@ if __name__ == '__main__':
         df = my_df(coll)
         bm25_scores = my_bm25(coll, query_terms, df)
         save_bm25_ranking_to_file(bm25_scores, query_num.split(':')[-1].strip())
-        print_bm25_top_documents(query_num)
+        print_bm25_top_documents(query_num.split(':')[-1].strip())
+
+      # Test for only one query R107
+    query_num = 'Number: R107'
+    if query_num in queries_dict:
+        query_terms = queries_dict[query_num]
+        collection_num = ''.join(c for c in query_num if c.isdigit())  # Get corresponding collection for the query number
+        coll = parse_rcv1v2(stopwordList, f"{input_path}Data_C{collection_num}")  # Create a collection of Rcv1Doc objects for the corresponding coll
+        df = my_df(coll)  # Get a dictionary of {term: doc_fre} : how many documents contain the term
+        jm_lm_scores = my_bm25(coll, query_terms, df)  # Calculate JM_LM probability for given query term
+        save_bm25_ranking_to_file(jm_lm_scores, query_num.split(':')[-1].strip())  # Save the ranked file per query term
+        print_bm25_top_documents(query_num.split(':')[-1].strip())
+
 
