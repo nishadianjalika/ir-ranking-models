@@ -63,7 +63,7 @@ def print_bm25_top_documents(query_num, log_file):
         top_documents = sorted_docs[:15]
 
         output = []
-        output.append(f"Top 15 Documents for {query_num} (DocID Weight):")
+        output.append(f"Query{query_num} (DocID Weight):")
         for doc_score in top_documents:
             doc_id, score = doc_score.strip().split(' ')
             output.append(f"{doc_id} {score}\n")
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     query_file_path = 'the50Queries.txt'
     # Get input_path for .xml files and get stopwordList by calling method defined in Question01
     input_path, stopwordList = get_input_path_and_stopword_list()
-    log_file = "output_file_BM25_Ranking_Docs"
+    log_file = "output_file_BM25_Ranking_Docs_top15"
     queries_dict = parse_queries(query_file_path, stopwordList, 'BM25')
 
     for query_num, query_terms in queries_dict.items():

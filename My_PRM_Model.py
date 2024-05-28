@@ -7,7 +7,7 @@ from BM25_Model import *
 # first, use BM25 to rank the documents based on the initial query
 # Then, use Rocchio's algorithm to adjust the query vector using the top k(10) documents from the initial BM25 ranking
 # Then, re-rank the documents again using the updated query vector and BM25 scores.
-def my_prm(coll, query_terms, df):
+def my_prm(coll, query_terms, df, alpha, beta, gamma):
     # Initially, calculating bm25 scores for long queries(with title, desc & narratives)
     bm25_scores = my_bm25(coll, query_terms, df) 
         
@@ -15,11 +15,11 @@ def my_prm(coll, query_terms, df):
     sorted_scores_desc = sorted(bm25_scores.items(), key=lambda x: x[1], reverse=True) 
 
     # with pseudo-relevance feedback technique, we assumed that the 10 top-ranked documents are relevant and last 10 are non-relevant
-    relevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[:10]}
-    nonrelevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[-10:]}
+    relevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[:5]}
+    nonrelevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[-5:]}
 
     # Using Rocchio's algorithm and the top-ranked documents to refine the query vector
-    updated_query_vector = rocchios_algorithm(vector_normalize(query_terms), relevant_documents, nonrelevant_documents)
+    updated_query_vector = rocchios_algorithm(vector_normalize(query_terms), relevant_documents, nonrelevant_documents, alpha, beta, gamma)
 
     # Re-rank documents again using the refined query vector.
     prm_scores = my_bm25(coll, updated_query_vector, df)
@@ -30,10 +30,10 @@ def my_prm(coll, query_terms, df):
 # This is the Rocchio's Algorithm developed based on pseudo-relevance 
 # Rocchio's Algorithm: Maximizes the difference between the average vector representing 
 # the relevant documents and the average vector representing the non-relevant documents.
-def rocchios_algorithm(vactorized_query, relevant_docs, nonrelevant_docs):
-    alpha = 1
-    beta = 4
-    gamma = 0.1
+def rocchios_algorithm(vactorized_query, relevant_docs, nonrelevant_docs, alpha, beta, gamma):
+    # alpha = 1 #8 #1 #Controls the weight of the original query vector.
+    # beta = 0.75 #16 #4 #Controls the weight of the centroid of relevant documents
+    # gamma = 0.15 #4 #0.1 #Controls the weight of the centroid of non-relevant documents
 
     centroid_for_relevant_docs = {term: 0 for term in vactorized_query}
     centroid_for_nonrelevant_docs = {term: 0 for term in vactorized_query}
@@ -116,8 +116,12 @@ if __name__ == '__main__':
         coll = parse_rcv1v2(stopwordList, f"{input_path}Data_C{collection_num}")
         df = my_df(coll) # Get a dictionary of {term: doc_fre} : how many documents contain the term
 
-        prm_model_scores = my_prm(coll, query_terms, df)
+        alpha = 4 #8 #1 #Controls the weight of the original query vector.
+        beta = 4 #16 #4 #Controls the weight of the centroid of relevant documents
+        gamma = 0.01 #4 #0.1 #Controls the weight of the centroid of non-relevant documents
 
-        log_file = "output_file_MyPRM_Ranking_Docs"
+        prm_model_scores = my_prm(coll, query_terms, df, alpha, beta, gamma)
+
+        log_file = "output_file_MyPRM_Ranking_Docs_top15"
         save_prm_ranking_to_file(prm_model_scores, query_num.split(':')[-1].strip())
         print_prm_top_documents(query_num.split(':')[-1].strip(), log_file)

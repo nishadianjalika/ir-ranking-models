@@ -70,6 +70,6 @@ if __name__ == '__main__':
         print(f"Calculating for query title {query_num}")
         jm_lm_scores = jm_lm(coll, query_terms, df) # calculate jm_lm probabaility for given query term
         
-        log_file = "output_file_JMLM_Ranking_Docs"
+        log_file = "output_file_JMLM_Ranking_Docs_top15"
         save_jmlm_ranking_to_file(jm_lm_scores, query_num.split(':')[-1].strip()) #save the ranked file per query term
         print_jmlm_top_documents(query_num.split(':')[-1].strip(), log_file)

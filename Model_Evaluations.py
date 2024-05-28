@@ -162,32 +162,35 @@ def model_evaluation(folder_result, model):
     return precision, precision_10, DCG10
 
 """#### 01. Precision"""
-def compare_precision(df1_precision, df2_precision, df3_precision):
+def compare_precision(bm25_precision, jmlm_precision, prm_precision):
     warnings.filterwarnings('ignore')
 
     # Concatenate the dataframes horizontally
-    concatenated_precision = pd.concat([df1_precision, df2_precision, df3_precision], axis=1)
+    precision_table = pd.concat([bm25_precision, jmlm_precision, prm_precision], axis=1)
 
     # Reset the index of the concatenated dataframe
-    concatenated_precision = concatenated_precision.reset_index(drop=True)
+    precision_table = precision_table.reset_index(drop=True)
 
     # Select columns 0, 1, 3, and 5
-    df_precision = concatenated_precision.iloc[:, [0,1,3,5]]
+    full_precision_table = precision_table.iloc[:, [0,1,3,5]]
 
     # Display the resulting dataframe
     print("----- Table 1: The performance of 3 models on average precision -----")
-    print(df_precision.head(151))
+    print(full_precision_table.head(151))
 
-    average_values_precision = df_precision.mean() 
+    average_values_precision = full_precision_table.mean() 
+    print("average_values_precision(MAP)")
+    print(average_values_precision)
 
     # Create a new row with the average values
-    average_row = pd.DataFrame([average_values_precision], columns=df_precision.columns)
+    average_row = pd.DataFrame([average_values_precision], columns=full_precision_table.columns)
 
     # Concatenate the average row to the original DataFrame
-    df_with_average = pd.concat([df_precision, average_row], ignore_index=True)
+    df_with_average = pd.concat([full_precision_table, average_row], ignore_index=True)
 
     # Print the DataFrame with the average row
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
+    # print(df_with_average)
     return df_with_average, average_values_precision
 
 
@@ -208,6 +211,8 @@ def compare_precision10(df1_precision_10, df2_precision_10, df3_precision_10):
     print(df_precision10.head(151))
 
     average_values_precision10 = df_precision10.mean()
+    print("Average: precision10")
+    print(average_values_precision10)
 
     # Create a new row with the average values
     average_row = pd.DataFrame([average_values_precision10], columns=df_precision10.columns)
@@ -285,6 +290,8 @@ def compare_DCG(df1_DCG10, df2_DCG10, df3_DCG10):
     print(df_DCG10.head(151))
 
     average_values_DCG10 = df_DCG10.mean() 
+    print("Average: DCG10")
+    print(average_values_DCG10)
 
     # Create a new row with the average values
     average_row = pd.DataFrame([average_values_DCG10], columns=df_DCG10.columns)
@@ -297,32 +304,28 @@ def compare_DCG(df1_DCG10, df2_DCG10, df3_DCG10):
     return df_with_average, average_values_DCG10
 
 
+
+
 if __name__ == '__main__':
-
-    # Call functions
-    folder_result_BM25 = "RankingOutputs_BM25" #<============== INPUT YOUR FILE NAME
-    folder_result_JMLM = "RankingOutputs_JM_LM" #<============== INPUT YOUR FILE NAME
-    folder_result_MYPRM = "RankingOutputs_MY_PRM" #<============== INPUT YOUR FILE NAME
-    
-    bm25_model = "BM25"
-    jmlm_model = "JM_LM"
-    myprm_model = "MY_PRM"
-
     #Evaluate BM25 model results
-    df1_precision, df1_precision_10, df1_DCG10 = model_evaluation(folder_result_BM25, bm25_model)
+    bm25_precision, bm25_precision_10, bm25_DCG10 = model_evaluation("RankingOutputs_BM25", "BM25")
+    
     #Evaluate JM_LM model results
-    df2_precision, df2_precision_10, df2_DCG10 = model_evaluation(folder_result_JMLM, jmlm_model)
+    jmlm_precision, jmlm_precision_10, jmlm_DCG10 = model_evaluation("RankingOutputs_JM_LM" , "JM_LM")
+    
     #Evaluate MY_PRM model results
-    df3_precision, df3_precision_10, df3_DCG10 = model_evaluation(folder_result_MYPRM, myprm_model)
+    prm_precision, prm_precision_10, prm_DCG10 = model_evaluation("RankingOutputs_MY_PRM", "MY_PRM")
 
-    print(f"{df1_precision} , { df2_precision}, {df3_precision}")
+    # print(f"{bm25_precision} , { jmlm_precision}, {prm_precision}")
     
     # compare_precision
-    df_with_average, average_values_precision = compare_precision(df1_precision, df2_precision, df3_precision)
+    df_with_average, average_values_precision = compare_precision(bm25_precision, jmlm_precision, prm_precision)
+    
     # compare_precision10
-    df_with_average_10, average_values_precision10 = compare_precision10(df1_precision_10, df2_precision_10, df3_precision_10)
-    # # compare_DCG
-    df_with_average_DCG, average_values_DCG10 = compare_DCG(df1_DCG10, df2_DCG10, df3_DCG10)
+    df_with_average_10, average_values_precision10 = compare_precision10(bm25_precision_10, jmlm_precision_10, prm_precision_10)
+    
+    # compare_DCG
+    df_with_average_DCG, average_values_DCG10 = compare_DCG(bm25_DCG10, jmlm_DCG10, prm_DCG10)
 
     plot_average_val_to_compare(average_values_precision, average_values_precision10, average_values_DCG10)
     # Plot the comparison using bar chart
