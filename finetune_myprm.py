@@ -36,22 +36,12 @@ def rocchios_algorithm(vectorized_query, relevant_docs, nonrelevant_docs, alpha,
 def compare_precision_prm( prm_precision):
     warnings.filterwarnings('ignore')
 
-    # Concatenate the dataframes horizontally
-    # precision_table = pd.concat([ prm_precision], axis=1)
-
-    # Reset the index of the concatenated dataframe
     prm_precision = prm_precision.reset_index(drop=True)
-
-    # Select columns 0, 1, 3, and 5
-    # full_precision_table = precision_table.iloc[:, [0,1,3,5]]
-
     # Display the resulting dataframe
     print("----- Table 1: The performance of 3 models on average precision -----")
-    # print(full_precision_table.head(151))
 
     average_values_precision = prm_precision.mean() 
-    # print("average_values_precision(MAP)")
-    # print(average_values_precision)
+
 
     # Create a new row with the average values
     average_row = pd.DataFrame([average_values_precision], columns=prm_precision.columns)
@@ -63,6 +53,39 @@ def compare_precision_prm( prm_precision):
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
     # print(df_with_average)
     return df_with_average, average_values_precision
+
+def compare_precision10_prm(df3_precision_10):
+ 
+    average_values_precision10 = df3_precision_10.mean()
+    print("Average: precision10")
+    print(average_values_precision10)
+
+    # Create a new row with the average values
+    average_row = pd.DataFrame([average_values_precision10], columns=df3_precision_10.columns)
+
+    # Concatenate the average row to the original DataFrame
+    df_with_average = pd.concat([df3_precision_10, average_row], ignore_index=True)
+
+    # Print the DataFrame with the average row
+    df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
+    return df_with_average, average_values_precision10
+
+def compare_DCG_prm(df3_DCG10):
+    # Ignore warnings
+    warnings.filterwarnings('ignore')
+    average_values_DCG10 = df3_DCG10.mean() 
+    print("Average: DCG10")
+    print(average_values_DCG10)
+
+    # Create a new row with the average values
+    average_row = pd.DataFrame([average_values_DCG10], columns=df3_DCG10.columns)
+
+    # Concatenate the average row to the original DataFrame
+    df_with_average = pd.concat([df3_DCG10, average_row], ignore_index=True)
+
+    # Print the DataFrame with the average row
+    df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
+    return df_with_average, average_values_DCG10
 
 def evaluate_my_prm(alpha, beta, gamma):
     # Load stop words and input path
@@ -82,29 +105,31 @@ def evaluate_my_prm(alpha, beta, gamma):
     
     # Evaluate the model
     prm_precision, prm_precision_10, prm_DCG10 = model_evaluation("RankingOutputs_MY_PRM", "MY_PRM")
-    _, avg_map = compare_precision_prm(prm_precision)
-    # _, avg_prec_10 = compare_precision10(None, None, prm_precision_10)
-    # _, avg_dcg_10 = compare_DCG(None, None, prm_DCG10)
+    _, avg_map = compare_precision_prm( prm_precision)
+    _, avg_prec_10 = compare_precision10_prm( prm_precision_10)
+    _, avg_dcg_10 = compare_DCG_prm( prm_DCG10)
     
-    return avg_map['MY_PRM']
+    return avg_map['MY_PRM'], avg_prec_10['MY_PRM'], avg_dcg_10['MY_PRM']
 
 # Grid Search for Best Parameters
 best_map = 0
+best_dcg = 0
 best_alpha = 1
 best_beta = 0.5
 best_gamma = 0.1
 
-alpha_values = [1,3,6,0.1]
-beta_values = [4, 0.1]
-gamma_values = [ 0.001, 0.005]
+alpha_values = [1,0.1,2,5,2.5,0.1,3,4,3.5, 3.9, 1.6]
+beta_values = [0.5, 0.1, 2.5, 3, 4, 0.01,9, 3.5]
+gamma_values = [0.1,0.001, 1, 0.5, 2.5, 0.01]
 
 for alpha, beta, gamma in itertools.product(alpha_values, beta_values, gamma_values):
-    avg_map = evaluate_my_prm(alpha, beta, gamma)
-    if avg_map > best_map:
-        best_map = avg_map
+    avg_map, avg_prec_10,avg_dcg_10 = evaluate_my_prm(alpha, beta, gamma)
+    if avg_dcg_10 > best_dcg:
+        # best_map = avg_map
+        best_dcg = avg_dcg_10
         best_alpha = alpha
         best_beta = beta
         best_gamma = gamma
-    print(f"Alpha: {alpha}, Beta: {beta}, Gamma: {gamma}, MAP: {avg_map}")
+    print(f"Alpha: {alpha}, Beta: {beta}, Gamma: {gamma}, MAP: {avg_map}, Precision@10: {avg_prec_10}, DCG10: {avg_dcg_10}")
 
 print(f"Best Parameters - Alpha: {best_alpha}, Beta: {best_beta}, Gamma: {best_gamma}")

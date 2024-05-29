@@ -1,14 +1,7 @@
 from Model_Evaluations import *
 import scipy.stats as stats
 
-# Perform the t-test with alternative hypothesis 'less'
-'''
-An one-sided or one-tailed test is used to establish that B is better than baseline A
-A two-tailed test is used to establish a difference between B and A.
 
-- Assumption is that the difference between the effectiveness values is a sample from a normal distribution
-- Null hypothesis is that the mean of the distribution of differences is zero
-'''
 def perform_t_test(BM25_Model_eval, JM_LM_Model_eval, My_PRM_Model_eval ):
     
     jmlmVsBM25_Tstat, jmlmVsBM25_Pval = stats.ttest_ind(JM_LM_Model_eval, BM25_Model_eval, alternative='less')

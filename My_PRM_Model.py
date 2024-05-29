@@ -15,8 +15,8 @@ def my_prm(coll, query_terms, df, alpha, beta, gamma):
     sorted_scores_desc = sorted(bm25_scores.items(), key=lambda x: x[1], reverse=True) 
 
     # with pseudo-relevance feedback technique, we assumed that the 10 top-ranked documents are relevant and last 10 are non-relevant
-    relevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[:5]}
-    nonrelevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[-5:]}
+    relevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[:15]}
+    nonrelevant_documents = {docid: vector_normalize(coll[docid].terms) for docid, score in sorted_scores_desc[-15:]}
 
     # Using Rocchio's algorithm and the top-ranked documents to refine the query vector
     updated_query_vector = rocchios_algorithm(vector_normalize(query_terms), relevant_documents, nonrelevant_documents, alpha, beta, gamma)
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         coll = parse_rcv1v2(stopwordList, f"{input_path}Data_C{collection_num}")
         df = my_df(coll) # Get a dictionary of {term: doc_fre} : how many documents contain the term
 
-        alpha = 4 #8 #1 #Controls the weight of the original query vector.
+        alpha = 1 #8 #1 #Controls the weight of the original query vector.
         beta = 4 #16 #4 #Controls the weight of the centroid of relevant documents
         gamma = 0.01 #4 #0.1 #Controls the weight of the centroid of non-relevant documents
 

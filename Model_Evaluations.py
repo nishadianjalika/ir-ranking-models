@@ -49,18 +49,21 @@ def process_benckmark_files():
     #Returns a dictionary with the structure of {datasetID, docId, and relevanceScore}
     return benchmark_dataset 
 
-def calculate_precision(folder_result, model):
-    dataset_feedback = process_benckmark_files()
-    result_folder = folder_result
+# calculate precision values for the given folder where results are stored for then given model
+# compare the generated results with benchmark given results
+# returns a precision scores to all documents within the folder 
+def calculate_precision_values(folder_of_model_result, modelname):
+    benchmark_vals = process_benckmark_files()
     dataset_ranking = {}
     data = []
 
-    for filename in os.listdir(result_folder):
+    # Iterarte through all the documents within the result folder by searching files with .dat
+    for filename in os.listdir(folder_of_model_result):
         if filename.endswith(".dat"):
-            dataset_id = re.search(r"R(\d+)", filename).group(1)
+            dataset_id = re.search(r"R(\d+)", filename).group(1) #extract the dataset id
             dataset_ranking[dataset_id] = {}
             i = 1
-            file_path = os.path.join(result_folder, filename)
+            file_path = os.path.join(folder_of_model_result, filename)
             with open(file_path, "r") as result_file:
                 lines = result_file.readlines()
                 for line in lines:
@@ -69,25 +72,24 @@ def calculate_precision(folder_result, model):
                     dataset_ranking[dataset_id][str(i)] = doc_id
                     i += 1 # assigns the current position to each dataset_id in the ranking
 
-            label, map1_score = calculate_metrics(dataset_id, dataset_ranking, dataset_feedback)
+            label, map1_score = calculate_metrics(dataset_id, dataset_ranking, benchmark_vals)
             data.append([label, map1_score])
 
-    df = pd.DataFrame(data, columns=['Topic', model])
+    df = pd.DataFrame(data, columns=['Topic', modelname])
     return df
 
 # Calculate the precision@10
-def calculate_precision_N(folder_result, model, N=10):
-    dataset_feedback = process_benckmark_files()
-    result_folder = folder_result
+def calculate_precision_of_N(folder_of_model_result, modelname, N=10):
+    benchmark_vals = process_benckmark_files()
     dataset_ranking = {}
     data = []
 
-    for filename in os.listdir(result_folder):
+    for filename in os.listdir(folder_of_model_result):
         if filename.endswith(".dat"):
             dataset_id = re.search(r"R(\d+)", filename).group(1)
             dataset_ranking[dataset_id] = {}
             data_rank = {}
-            file_path = os.path.join(result_folder, filename)
+            file_path = os.path.join(folder_of_model_result, filename)
             with open(file_path, "r") as result_file:
                 lines = result_file.readlines()
                 for line in lines:
@@ -102,10 +104,10 @@ def calculate_precision_N(folder_result, model, N=10):
                 if i > N:
                     break
             
-            label, map1_score = calculate_metrics(dataset_id, dataset_ranking, dataset_feedback)
+            label, map1_score = calculate_metrics(dataset_id, dataset_ranking, benchmark_vals)
             data.append([label, map1_score])
     
-    df = pd.DataFrame(data, columns=['Topic', model])
+    df = pd.DataFrame(data, columns=['Topic', modelname])
     return df
 
 # Calculate the Discounted Community Gain 12
@@ -154,10 +156,11 @@ def calculate_DCG(folder_result, model):
     df = pd.DataFrame(DCG10_values, columns=['Topic', model])
     return df
 
-"""#### model_evaluation using three methods """
+# Evaluate each given model using three matrics(precision, precision@10 and DCG10)
+#returns a dataframe with calculated values per document 
 def model_evaluation(folder_result, model):
-    precision = calculate_precision(folder_result, model)
-    precision_10 = calculate_precision_N(folder_result, model)
+    precision = calculate_precision_values(folder_result, model)
+    precision_10 = calculate_precision_of_N(folder_result, model)
     DCG10 = calculate_DCG(folder_result, model)
     return precision, precision_10, DCG10
 
