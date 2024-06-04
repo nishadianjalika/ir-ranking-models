@@ -8,7 +8,7 @@ import os
 def my_bm25(coll, query_term_freq, df):
 
     k1 = 1.2
-    k2 = 100
+    k2 = 500
     b = 0.75
     r = R = 0
     bm25_scores = {} # initialize an empty dictionary to store scores

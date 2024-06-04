@@ -1,19 +1,21 @@
 from Model_Evaluations import *
 import scipy.stats as stats
 
+### Task 6: Recommend a model based on significance test
+### compare models between BM25 and JM_LM, BM25 and My_PRM and JM_LM and My_PRM using t-tests
 
 def perform_t_test(BM25_Model_eval, JM_LM_Model_eval, My_PRM_Model_eval ):
     
-    jmlmVsBM25_Tstat, jmlmVsBM25_Pval = stats.ttest_ind(JM_LM_Model_eval, BM25_Model_eval, alternative='less')
+    jmlmVsBM25_Tstat, jmlmVsBM25_Pval = stats.ttest_rel(JM_LM_Model_eval, BM25_Model_eval, alternative='two-sided')
 
-    prmVsBM25_Tstat, prmVsBM25_Pval = stats.ttest_ind(My_PRM_Model_eval, BM25_Model_eval, alternative='less')
+    prmVsBM25_Tstat, prmVsBM25_Pval = stats.ttest_rel(My_PRM_Model_eval, BM25_Model_eval, alternative='two-sided')
 
-    jmlmVsPrm_Tstat, jmlmVsPrm_Pval = stats.ttest_ind(JM_LM_Model_eval, My_PRM_Model_eval, alternative='less')
+    jmlmVsPrm_Tstat, jmlmVsPrm_Pval = stats.ttest_rel(JM_LM_Model_eval, My_PRM_Model_eval, alternative='two-sided')
 
     t_test_data = {'Model': ["JM_LM vs BM25", "MY_PRM vs BM25", "JM_LM vs MY_PRM"],
         'T-Statistic': [jmlmVsBM25_Tstat, prmVsBM25_Tstat, jmlmVsPrm_Tstat],
         'P-Value': [jmlmVsBM25_Pval, prmVsBM25_Pval, jmlmVsPrm_Pval ]
-        
+      
     }
     # Create a DataFrame from the dictionary
     t_test_results = pd.DataFrame(t_test_data)

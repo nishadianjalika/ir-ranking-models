@@ -4,10 +4,11 @@ import os
 
 # Task 02: KM_LM (Jelinek-Mercer based Language Model)
 # calculate jm_lm probability for a given query term
+# handles the zero probabailities
 
 def jm_lm(coll, query_term_freq, df):
     jm_lm_scores = {}
-    lambda_param = 0.4
+    lambda_param = 0.4 #smoothing paramter, balances the term frequency for doc and whole collection
 
     # data_cx = collection_length is the total number of word occurrences in collection
     data_cx = sum(rcv1_doc.getDocLen() for rcv1_doc in coll.values())
