@@ -194,6 +194,7 @@ def compare_precision(bm25_precision, jmlm_precision, prm_precision):
     # Print the DataFrame with the average row
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
     print(df_with_average)
+    df_with_average.to_csv("average_precision", sep='\t')
     return df_with_average, average_values_precision
 
 
@@ -225,6 +226,7 @@ def combine_precision10_for_models(bm25_precision_10, jmlm_precision_10, myprm_p
     # Print the DataFrame with the average row
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
     print(df_with_average)
+    df_with_average.to_csv("average_precision_10", sep='\t')
     return df_with_average, average_values_precision10
 
 def plot_average_val_to_compare(average_values_precision, average_values_precision10, average_values_DCG10):
@@ -306,6 +308,7 @@ def combine_DCG_for_models(bm25_DCG10, jmlm_DCG10, myprm_DCG10):
     # Print the DataFrame with the average row
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
     print(df_with_average)
+    df_with_average.to_csv("average_dcg_10", sep='\t')
     return df_with_average, average_values_DCG10
 
 
@@ -334,6 +337,6 @@ if __name__ == '__main__':
 
     # plot_average_val_to_compare(average_values_precision, average_values_precision10, average_values_DCG10)
     # Plot the comparison using bar chart
-    plot_bar_chart_comparison(average_values_precision, average_values_precision10, average_values_DCG10)
+    # plot_bar_chart_comparison(average_values_precision, average_values_precision10, average_values_DCG10)
 
 
