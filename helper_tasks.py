@@ -178,7 +178,7 @@ def parse_queries(query_file_path, stop_words, model_name):
                 query_title = query_title.replace("<p>", "").replace("</p>", "")
                 query_title = query_title.translate(str.maketrans('', '', string.digits)).translate(
                     str.maketrans(string.punctuation, ' ' * len(string.punctuation)))
-                query_title = re.sub("\s+", " ", query_title)
+                query_title = re.sub(r"\s+", " ", query_title)
 
                 k = j + 1
                 while not q_lines[k].startswith('<desc>'):
@@ -192,7 +192,7 @@ def parse_queries(query_file_path, stop_words, model_name):
                 query_desc = query_desc.replace("<p>", "").replace("</p>", "")
                 query_desc = query_desc.translate(str.maketrans('', '', string.digits)).translate(
                     str.maketrans(string.punctuation, ' ' * len(string.punctuation)))
-                query_desc = re.sub("\s+", " ", query_desc)
+                query_desc = re.sub(r"\s+", " ", query_title)
 
                 m = k + 1
                 query_narr = ""
@@ -207,7 +207,7 @@ def parse_queries(query_file_path, stop_words, model_name):
                 query_narr = query_narr.replace("<p>", "").replace("</p>", "")
                 query_narr = query_narr.translate(str.maketrans('', '', string.digits)).translate(
                     str.maketrans(string.punctuation, ' ' * len(string.punctuation)))
-                query_narr = re.sub("\s+", " ", query_narr)
+                query_narr = re.sub(r"\s+", " ", query_title)
 
                 if query_num not in queries:
                     queries[query_num] = {}
@@ -215,7 +215,8 @@ def parse_queries(query_file_path, stop_words, model_name):
                 if model_name == 'BM25' or model_name == 'JM_LM': 
                     sections = [query_title] # For BM25 and JM_LM models query terms will be taken only query titles
                 elif model_name == 'PRM':
-                    sections = [query_title, query_desc, query_narr] # For PRM model, long-queries ie. query title, description and narratives will be taken
+                    sections = [query_title]
+                    # sections = [query_title, query_desc, query_narr] # For PRM model, long-queries ie. query title, description and narratives will be taken
                 else:
                     raise ValueError("Invalid model type")
 

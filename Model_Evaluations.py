@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import warnings
 import seaborn as sns
+import numpy as np
 
 ### Task 5. Using 3 effectiveness measures to evaluate the three models
 # Average precision (and MAP),
@@ -181,7 +182,9 @@ def compare_precision(bm25_precision, jmlm_precision, prm_precision):
     print("----- Table 1: The performance of 3 models on average precision -----")
     # print(full_precision_table.head(151))
 
-    average_values_precision = full_precision_table.mean() 
+    # average_values_precision = full_precision_table.mean() 
+    numeric_cols = full_precision_table.select_dtypes(include=[np.number])
+    average_values_precision = numeric_cols.mean()
     # print("average_values_precision(MAP)")
     # print(average_values_precision)
 
@@ -213,7 +216,9 @@ def combine_precision10_for_models(bm25_precision_10, jmlm_precision_10, myprm_p
     print("----- Table 2. The performance of 3 models on precision@10 -----")
     # print(df_precision10.head(151))
 
-    average_values_precision10 = df_precision10.mean()
+    # average_values_precision10 = df_precision10.mean()
+    numeric_cols = df_precision10.select_dtypes(include=[np.number])
+    average_values_precision10 = numeric_cols.mean()
     # print("Average: precision10")
     # print(average_values_precision10)
 
@@ -295,7 +300,9 @@ def combine_DCG_for_models(bm25_DCG10, jmlm_DCG10, myprm_DCG10):
     print("----- Table 3: The performance of 3 models on DCG10 -----")
     # print(df_DCG10.head(151))
 
-    average_values_DCG10 = df_DCG10.mean() 
+    # average_values_DCG10 = df_DCG10.mean() 
+    numeric_cols = df_DCG10.select_dtypes(include=[np.number])
+    average_values_DCG10 = numeric_cols.mean()
     # print("Average: DCG10")
     # print(average_values_DCG10)
 
@@ -308,7 +315,7 @@ def combine_DCG_for_models(bm25_DCG10, jmlm_DCG10, myprm_DCG10):
     # Print the DataFrame with the average row
     df_with_average.iloc[:, 0] = df_with_average.iloc[:, 0].fillna("Average")
     print(df_with_average)
-    df_with_average.to_csv("average_dcg_10", sep='\t')
+    # df_with_average.to_csv("average_dcg_10", sep='\t')
     return df_with_average, average_values_DCG10
 
 
